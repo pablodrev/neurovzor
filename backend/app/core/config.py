@@ -11,8 +11,13 @@ class Settings(BaseSettings):
     APP_VERSION: str = "1.0.0"
     API_V1_PREFIX: str = "/api/v1"
 
-    # CORS — в продакшне заменить на конкретные домены
-    CORS_ORIGINS: list[str] = ["*"]
+    # CORS — для локальной разработки разрешаем localhost:3000, для продакшна сузить
+    CORS_ORIGINS: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+    ]
 
     # Пути к весам ML-моделей (монтируются через volume в Docker)
     YOLO_HIP_WEIGHTS: str = "weights/yolo_hip.pt"

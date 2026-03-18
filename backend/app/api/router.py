@@ -9,11 +9,13 @@
 from fastapi import APIRouter
 
 from app.modules.hip_dysplasia.router import router as hip_dysplasia_router
+from app.api.patients_router import router as patients_router
 
 api_router = APIRouter()
 
 # --- Регистрация модулей ---
 api_router.include_router(hip_dysplasia_router)
+api_router.include_router(patients_router)
 # api_router.include_router(scoliosis_router)   # будущий модуль
 # api_router.include_router(fracture_router)    # будущий модуль
 

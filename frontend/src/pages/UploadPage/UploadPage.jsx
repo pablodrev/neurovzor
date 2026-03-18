@@ -1,13 +1,48 @@
 import { useNavigate } from 'react-router';
+import { useEffect, useState } from 'react';
 import { Button } from '../../components/ui/Button/Button';
 import { Input } from '../../components/ui/Input/Input';
 import { Avatar, AvatarFallback } from '../../components/ui/Avatar/Avatar';
 import { Card, CardContent } from '../../components/ui/Card/Card';
 import { ScrollArea } from '../../components/ui/ScrollArea/ScrollArea';
+import FileUploader from '../../components/ui/FileUploader/FileUploader';
+import api from '../../services/api.js';
 import './UploadPage.scss';
 
 export function UploadPage() {
     const navigate = useNavigate();
+    const [patients, setPatients] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const loadPatients = async () => {
+            try {
+                const data = await api.getPatients();
+                setPatients(data);
+            } catch (err) {
+                console.error('Failed to load patients:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadPatients();
+    }, []);
+
+    const handleAnalysisComplete = (result) => {
+        // Добавляем нового пациента в список
+        const newPatient = {
+            id: result.patient_id,
+            name: `Пациент ${result.patient_id}`,
+            study: 'Тазобедренный сустав',
+            date: new Date().toLocaleString('ru-RU'),
+        };
+
+        setPatients((prev) => [newPatient, ...prev]);
+
+        // Переходим на страницу просмотра студента
+        navigate(`/student?patientId=${result.patient_id}`);
+    };
 
     return (
         <div className="upload-page">
@@ -57,27 +92,31 @@ export function UploadPage() {
                     </div>
 
                     <ScrollArea className="upload-page__patient-list scrollbar-thin">
-                        <div className="upload-page__patient-item" onClick={() => navigate('/student')}>
-                            <div className="upload-page__patient-image"></div>
-                            <div className="upload-page__patient-info">
-                                <div>
-                                    <div className="upload-page__patient-name">Иванов А.В.</div>
-                                    <div className="upload-page__patient-id">ПТ-2024-1234</div>
-                                </div>
-                                <div className="upload-page__patient-meta">
-                                    14.03.2025 / 12:30<br />
-                                    <span className="upload-page__patient-study">Тазобедренный сустав</span>
+                        {patients.map((patient) => (
+                            <div
+                                key={patient.id}
+                                className="upload-page__patient-item"
+                                onClick={() => navigate(`/student?patientId=${patient.id}`)}
+                            >
+                                <div className="upload-page__patient-image"></div>
+                                <div className="upload-page__patient-info">
+                                    <div>
+                                        <div className="upload-page__patient-name">{patient.name}</div>
+                                        <div className="upload-page__patient-id">{patient.id}</div>
+                                    </div>
+                                    <div className="upload-page__patient-meta">
+                                        {patient.date}
+                                        <br />
+                                        <span className="upload-page__patient-study">{patient.study}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-
-                        
+                        ))}
                     </ScrollArea>
                 </aside>
 
                 {/* CentralArea */}
                 <main className="upload-page__content scrollbar-thin">
-                    {/* Upload Card Container */}
                     <div className="upload-page__upload-section">
                         <Card className="upload-page__upload-card">
                             <CardContent className="upload-page__upload-card-content">
@@ -94,36 +133,12 @@ export function UploadPage() {
                                 <h1 className="upload-page__upload-title">Добавьте рентгеновский снимок</h1>
                                 <p className="upload-page__upload-subtitle">Тазобедренный сустав, прямая проекция</p>
 
-                                {/* Buttons Stack */}
+                                {/* FileUploader */}
                                 <div className="upload-page__upload-actions">
-                                    {/* Secondary Action 1 */}
-                                    <button className="upload-page__action-btn upload-page__action-btn--secondary">
-                                        <div className="upload-page__action-icon upload-page__action-icon--blue">
-                                            <svg className="upload-page__action-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
-                                            </svg>
-                                        </div>
-                                        <div className="upload-page__action-text">
-                                            <div className="upload-page__action-title">Загрузить из архива</div>
-                                            <div className="upload-page__action-desc">DICOM, JPG, PNG</div>
-                                        </div>
-                                    </button>
-
-                                    {/* Main Action */}
-                                    <button
-                                        onClick={() => navigate('/student')}
-                                        className="upload-page__action-btn upload-page__action-btn--primary"
-                                    >
-                                        <div className="upload-page__action-icon upload-page__action-icon--white">
-                                            <svg className="upload-page__action-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
-                                            </svg>
-                                        </div>
-                                        <div className="upload-page__action-text">
-                                            <div className="upload-page__action-title">Загрузить файл</div>
-                                            <div className="upload-page__action-desc upload-page__action-desc--light">Выберите файл на устройстве</div>
-                                        </div>
-                                    </button>
+                                    <FileUploader
+                                        onAnalysisComplete={handleAnalysisComplete}
+                                        onError={(err) => console.error(err)}
+                                    />
                                 </div>
                             </CardContent>
                         </Card>

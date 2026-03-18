@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { useEffect, useMemo, useState } from 'react';
 import { House } from 'lucide-react';
 import { Button } from '../../components/ui/Button/Button';
@@ -9,9 +9,8 @@ import { ScrollArea } from '../../components/ui/ScrollArea/ScrollArea';
 import Toolbar from '../../components/ui/Toolbar/Toolbar';
 import CornerstoneViewer from '../../components/ui/CornerstoneViewer/CornerstoneViewer';
 import FileUploader from '../../components/ui/FileUploader/FileUploader';
+import api from '../../services/api.js';
 import './StudentViewer.scss';
-
-const API_BASE = import.meta.env.VITE_API_BASE ?? '';
 
 const fallbackPatients = [
     {
@@ -44,11 +43,14 @@ const fallbackLandmarks = [
 
 export function StudentViewer() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const patientIdFromUrl = searchParams.get('patientId');
+
     const [activeTool, setActiveTool] = useState('Pan');
     const [files, setFiles] = useState([]);
     const [search, setSearch] = useState('');
     const [patients, setPatients] = useState([]);
-    const [activePatientId, setActivePatientId] = useState(null);
+    const [activePatientId, setActivePatientId] = useState(patientIdFromUrl);
     const [landmarks, setLandmarks] = useState([]);
     const [results, setResults] = useState([]);
     const [confidence, setConfidence] = useState(null);
@@ -56,7 +58,7 @@ export function StudentViewer() {
     const [error, setError] = useState(null);
 
     const apiFetch = async (path, options = {}) => {
-        const url = `${API_BASE}${path}`;
+        const url = `${path}`;
         const res = await fetch(url, {
             headers: { 'Content-Type': 'application/json' },
             ...options,
@@ -78,21 +80,25 @@ export function StudentViewer() {
             setError(null);
 
             try {
-                const patientsData = await apiFetch('/api/patients');
+                const patientsData = await api.getPatients();
                 setPatients(patientsData);
-                setActivePatientId(patientsData[0]?.id ?? null);
+                if (!activePatientId && patientsData.length > 0) {
+                    setActivePatientId(patientsData[0]?.id ?? null);
+                }
             } catch (err) {
                 console.error('Failed to load patients', err);
                 setError('Не удалось загрузить список пациентов');
                 setPatients(fallbackPatients);
-                setActivePatientId(fallbackPatients[0]?.id ?? null);
+                if (!activePatientId) {
+                    setActivePatientId(fallbackPatients[0]?.id ?? null);
+                }
             } finally {
                 setLoading(false);
             }
         };
 
         load();
-    }, []);
+    }, [activePatientId, patientIdFromUrl]);
 
     useEffect(() => {
         if (!activePatientId) return;
@@ -100,9 +106,9 @@ export function StudentViewer() {
         const loadPatientData = async () => {
             try {
                 const [landmarksData, resultsData, confidenceData] = await Promise.all([
-                    apiFetch(`/api/patients/${activePatientId}/landmarks`),
-                    apiFetch(`/api/patients/${activePatientId}/results`),
-                    apiFetch(`/api/patients/${activePatientId}/confidence`),
+                    api.getLandmarks(activePatientId),
+                    api.getResults(activePatientId),
+                    api.getConfidence(activePatientId),
                 ]);
 
                 setLandmarks(normalizeLandmarks(landmarksData));
