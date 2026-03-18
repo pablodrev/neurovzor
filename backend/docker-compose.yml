@@ -1,0 +1,14 @@
+version: "3.9"
+
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./weights:/app/weights  # веса ML-моделей вне образа
+    environment:
+      - YOLO_HIP_WEIGHTS=weights/yolo_hip.pt
+      - MEDSAM_WEIGHTS=weights/medsam.pth
+      - DEVICE=cpu
+    restart: unless-stopped
