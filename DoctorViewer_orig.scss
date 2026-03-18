@@ -1,0 +1,780 @@
+// DoctorViewer.scss
+@use '../../assets/styles/variables.scss' as *;
+@use '../../assets/styles/mixins.scss' as *;
+
+.doctor-viewer {
+    display: flex;
+    height: 100vh;
+    flex-direction: column;
+    font-family: $font-family-base;
+    background-color: $bg-dark;
+    color: var(--text-primary);
+    overflow: hidden;
+
+    // Header
+    &__header {
+        height: $header-height;
+        border-bottom: 1px solid $border-color;
+        background-color: $bg-panel;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 var(--space-md);
+        flex-shrink: 0;
+        z-index: 50;
+    }
+
+    &__tool-icons {
+        display: flex;
+        align-items: center;
+        gap: var(--space-xs);
+    }
+
+    &__tool-btn {
+        padding: var(--space-sm);
+        color: var(--text-muted);
+
+        &:hover {
+            background-color: $gray-800;
+            color: var(--text-primary);
+        }
+    }
+
+    &__icon {
+        width: 20px;
+        height: 20px;
+    }
+
+    &__divider {
+        width: 1px;
+        height: 24px;
+        background-color: $gray-700;
+        margin: 0 var(--space-xs);
+    }
+
+    &__patient-info {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+    }
+
+    &__patient-name {
+        font-size: var(--text-sm);
+        font-weight: var(--font-weight-medium);
+        color: var(--text-primary);
+    }
+
+    &__patient-details {
+        font-size: 10px;
+        color: var(--text-muted);
+    }
+
+    &__mode-switch {
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+    }
+
+    &__mode-group {
+        display: flex;
+        background-color: $bg-dark;
+        border-radius: var(--radius-lg);
+        padding: 2px;
+        border: 1px solid $border-color;
+    }
+
+    &__mode-btn {
+        padding: var(--space-xs) var(--space-sm);
+        font-size: var(--text-xs);
+
+        &--active {
+            background-color: $primary;
+            color: white;
+            box-shadow: var(--shadow-glow-blue);
+        }
+    }
+
+    &__avatar {
+        width: 32px;
+        height: 32px;
+        background-color: $gray-800;
+        border: 1px solid $gray-700;
+        cursor: pointer;
+    }
+
+    // Main layout
+    &__main {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+    }
+
+    // Sidebars
+    &__sidebar {
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        background-color: $bg-panel;
+
+        &--left {
+            width: $patient-list-width;
+            border-right: 1px solid $border-color;
+        }
+
+        &--right {
+            width: $detection-panel-width;
+            border-left: 1px solid $border-color;
+        }
+    }
+
+    &__sidebar-header {
+        padding: var(--space-md);
+        border-bottom: 1px solid $border-color;
+    }
+
+    &__sidebar-title {
+        font-size: var(--text-base);
+        font-weight: var(--font-weight-bold);
+        color: var(--text-primary);
+        margin-bottom: var(--space-md);
+    }
+
+    &__search {
+        position: relative;
+    }
+
+    &__search-input {
+        width: 84%;
+        padding-left: 32px;
+    }
+
+    &__search-icon {
+        position: absolute;
+        left: var(--space-sm);
+        top: 50%;
+        transform: translateY(-50%);
+        width: 16px;
+        height: 16px;
+        color: $gray-600;
+    }
+
+    // Patient list
+    &__patient-list {
+        flex: 1;
+        overflow-y: auto;
+        @include scrollbar;
+    }
+
+    &__alert {
+        padding: var(--space-sm);
+        background-color: rgba($red, 0.15);
+        border: 1px solid rgba($red, 0.4);
+        border-radius: var(--radius-md);
+        color: $red;
+        font-size: var(--text-xs);
+        margin: var(--space-sm) var(--space-md);
+    }
+
+    &__patient-empty {
+        padding: var(--space-lg);
+        text-align: center;
+        color: $gray-400;
+        font-size: var(--text-sm);
+    }
+
+    &__patient-item {
+        display: flex;
+        align-items: center;
+        padding: var(--space-sm);
+        border-left: 3px solid transparent;
+        border-bottom: 1px solid rgba($border-color, 0.5);
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover {
+            background-color: rgba($primary, 0.1);
+        }
+
+        &--active {
+            border-left-color: $primary;
+            background-color: rgba($primary, 0.05);
+        }
+    }
+
+    &__patient-image {
+        width: 60px;
+        height: 60px;
+        border-radius: var(--radius-sm);
+        background-color: $black;
+        overflow: hidden;
+        flex-shrink: 0;
+        margin-right: var(--space-sm);
+        position: relative;
+
+        img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.5;
+            filter: grayscale(1) contrast(1.25);
+            transform: scale(1.5);
+        }
+    }
+
+    &__patient-placeholder {
+        width: 100%;
+        height: 100%;
+        background-color: $gray-900;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    &__placeholder-icon {
+        width: 24px;
+        height: 24px;
+        color: $gray-700;
+    }
+
+    &__patient-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    &__patient-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    &__patient-name {
+        font-size: var(--text-xs);
+        font-weight: var(--font-weight-bold);
+        color: var(--text-primary);
+        @include truncate;
+    }
+
+    &__patient-date {
+        font-size: 9px;
+        color: var(--text-muted);
+    }
+
+    &__patient-id {
+        font-size: 10px;
+        color: var(--text-muted);
+    }
+
+    &__patient-study {
+        font-size: 10px;
+        color: $primary;
+        font-weight: var(--font-weight-medium);
+        margin-top: 2px;
+    }
+
+    // Central viewer
+    &__viewport {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background-color: $black;
+        position: relative;
+    }
+
+    &__toolbar-container {
+        padding: var(--space-md);
+        display: flex;
+        align-items: center;
+        gap: var(--space-md);
+        border-bottom: 1px solid $border-color;
+        background-color: rgba($bg-dark, 0.5);
+        flex-shrink: 0;
+    }
+
+    &__upload-group {
+        display: flex;
+        align-items: center;
+        gap: var(--space-md);
+    }
+
+    &__file-count {
+        font-size: var(--text-xs);
+        color: $gray-400;
+    }
+
+    &__image-container {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        padding: 0; // Убрали padding, чтобы canvas занимал все пространство
+    }
+
+    &__image-wrapper {
+        position: relative;
+        width: 100%; // Занимаем всю ширину контейнера
+        height: 100%; // Занимаем всю высоту контейнера
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        // Убрали max-height: 85vh; чтобы не ограничивать высоту
+    }
+
+    &__placeholder {
+        text-align: center;
+        color: $gray-400;
+        font-size: var(--text-base);
+        pointer-events: none;
+    }
+
+    &__placeholder-hint {
+        font-size: var(--text-xs);
+        color: $gray-600;
+        margin-top: var(--space-sm);
+    }
+
+    &__image {
+        max-height: 100%;
+        display: block;
+        object-fit: contain;
+        opacity: 0.8;
+    }
+
+    &__overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        max-width: 100%;
+        max-height: 100%;
+    }
+
+    &__line {
+        stroke-width: 1;
+        fill: none;
+
+        &--blue {
+            stroke: $blue;
+        }
+
+        &--green {
+            stroke: $green;
+        }
+
+        &--yellow {
+            stroke: $yellow;
+        }
+
+        &--red {
+            stroke: $red;
+        }
+
+        &--orange {
+            stroke: $orange;
+        }
+
+        &--white {
+            stroke: $white;
+        }
+    }
+
+    &__quadrant {
+        fill-opacity: 0.07;
+
+        &--green {
+            fill: $green;
+        }
+    }
+
+    &__text {
+        font-size: 8px;
+        font-weight: var(--font-weight-bold);
+
+        &--orange {
+            fill: $orange;
+        }
+
+        &--white {
+            fill: $white;
+        }
+    }
+
+    &__tags {
+        position: absolute;
+        bottom: var(--space-md);
+        left: var(--space-md);
+        display: flex;
+        gap: var(--space-sm);
+        pointer-events: none;
+    }
+
+    &__tag {
+        background-color: rgba($black, 0.6);
+        backdrop-filter: blur(4px);
+        border: 1px solid rgba($white, 0.1);
+        color: $gray-400;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: -0.5px;
+    }
+
+    // Measurements panel
+    &__measurements {
+        flex: 1;
+        padding: var(--space-md);
+        overflow-y: auto;
+        @include scrollbar;
+    }
+
+    &__measurements-title {
+        font-size: var(--text-sm);
+        font-weight: var(--font-weight-bold);
+        color: $primary;
+        margin-bottom: var(--space-lg);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    &__measurements-group {
+        margin-bottom: var(--space-xl);
+    }
+
+    &__group-title {
+        font-size: 10px;
+        font-weight: var(--font-weight-bold);
+        color: $primary;
+        margin-bottom: var(--space-sm);
+        opacity: 0.8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    &__lines-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-sm);
+    }
+
+    &__line-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: rgba($bg-dark, 0.4);
+        border: 1px solid $border-color;
+        padding: var(--space-sm);
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover {
+            border-color: rgba($primary, 0.5);
+        }
+    }
+
+    &__line-color {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: var(--space-sm);
+
+        &--blue {
+            background-color: $blue;
+        }
+
+        &--green {
+            background-color: $green;
+        }
+
+        &--yellow {
+            background-color: $yellow;
+        }
+
+        &--red {
+            background-color: $red;
+        }
+    }
+
+    &__line-name {
+        flex: 1;
+        font-size: 11px;
+        color: $gray-300;
+    }
+
+    &__line-check {
+        width: 16px;
+        height: 16px;
+        border-radius: var(--radius-sm);
+        background-color: $green;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    &__check-icon {
+        width: 12px;
+        height: 12px;
+        color: $white;
+    }
+
+    &__angles-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-sm);
+    }
+
+    &__angle-card {
+        background-color: rgba($bg-dark, 0.5);
+        border: 1px solid $border-color;
+
+        .card__content {
+            padding: var(--space-sm);
+            display: flex;
+            flex-direction: column;
+        }
+    }
+
+    &__angle-label {
+        font-size: 9px;
+        color: $gray-500;
+        text-transform: uppercase;
+        font-weight: var(--font-weight-bold);
+        margin-bottom: 2px;
+    }
+
+    &__angle-value {
+        font-size: var(--text-xl);
+        font-weight: var(--font-weight-bold);
+
+        color: #f97316;;
+    }
+
+    &__distances-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-sm);
+    }
+
+    &__distance-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: var(--text-xs);
+    }
+
+    &__distance-label {
+        color: $gray-400;
+    }
+
+    &__distance-value {
+        font-family: monospace;
+        font-weight: var(--font-weight-bold);
+        color: $gray-200;
+    }
+
+    &__checkbox-item {
+        display: flex;
+        align-items: center;
+        padding-top: var(--space-sm);
+        margin-top: var(--space-sm);
+        border-top: 1px solid rgba($border-color, 0.3);
+    }
+
+    &__checkbox-label {
+        margin-left: var(--space-sm);
+        font-size: 11px;
+        color: $gray-400;
+        cursor: pointer;
+
+        &:hover {
+            color: $white;
+        }
+    }
+
+    &__conclusion {
+        margin-top: var(--space-md);
+        padding: var(--space-md);
+        border: 1px solid rgba($primary, 0.3);
+        border-radius: var(--radius-xl);
+        background-color: rgba($primary, 0.05);
+    }
+
+    &__conclusion-title {
+        font-size: 10px;
+        font-weight: var(--font-weight-bold);
+        color: $primary;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: var(--space-sm);
+    }
+
+    &__conclusion-text {
+        font-size: 11px;
+        color: $gray-300;
+        font-style: italic;
+        line-height: 1.5;
+    }
+
+    &__actions {
+        padding: var(--space-md);
+        border-top: 1px solid $border-color;
+        background-color: rgba($bg-dark, 0.3);
+    }
+
+    &__report-btn {
+        width: 100%;
+        background-color: $primary;
+
+        &:hover {
+            background-color: darken($primary, 10%);
+        }
+    }
+
+    // Footer table
+    &__footer {
+        height: $measurements-table-height;
+        background-color: $bg-panel;
+        border-top: 1px solid $border-color;
+        flex-shrink: 0;
+        padding: var(--space-md);
+    }
+
+    &__table-wrapper {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    &__table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--space-md);
+    }
+
+    &__table-title {
+        font-size: var(--text-xs);
+        font-weight: var(--font-weight-bold);
+        color: $primary;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    &__legend {
+        display: flex;
+        align-items: center;
+        gap: var(--space-md);
+        font-size: 10px;
+    }
+
+    &__legend-item {
+        display: flex;
+        align-items: center;
+    }
+
+    &__legend-color {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 4px;
+
+        &--green {
+            background-color: $green;
+        }
+
+        &--red {
+            background-color: $red;
+        }
+
+        &--yellow {
+            background-color: $yellow;
+        }
+    }
+
+    &__legend-text {
+        color: $gray-400;
+    }
+
+    &__table-scroll {
+        flex: 1;
+        overflow: auto;
+        border: 1px solid $border-color;
+        border-radius: var(--radius-lg);
+        background-color: rgba($bg-dark, 0.5);
+        @include scrollbar;
+    }
+
+    &__table {
+        width: 100%;
+        text-align: left;
+        border-collapse: collapse;
+        min-width: 800px;
+
+        th {
+            position: sticky;
+            top: 0;
+            background-color: $bg-panel;
+            border-bottom: 1px solid $border-color;
+            padding: var(--space-sm) var(--space-md);
+            font-size: 10px;
+            font-weight: var(--font-weight-bold);
+            color: $gray-500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            z-index: 10;
+        }
+
+        td {
+            padding: var(--space-sm) var(--space-md);
+            font-size: var(--text-xs);
+            color: $gray-300;
+            border-bottom: 1px solid $border-color;
+        }
+
+        tr:hover {
+            background-color: rgba($white, 0.02);
+        }
+    }
+
+    &__table-cell {
+        font-weight: var(--font-weight-medium);
+    }
+
+    &__table-muted {
+        color: $gray-600;
+    }
+
+    &__table-danger {
+        color: $red;
+        font-weight: var(--font-weight-bold);
+    }
+
+    &__status {
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+    }
+
+    &__status-badge {
+        &--destructive {
+            background-color: rgba($red, 0.1);
+            color: $red;
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: var(--font-weight-bold);
+        }
+
+        &--success {
+            background-color: rgba($green, 0.1);
+            color: $green;
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: var(--font-weight-bold);
+        }
+    }
+}

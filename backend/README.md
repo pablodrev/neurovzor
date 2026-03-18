@@ -1,192 +1,379 @@
-# MedTech Diagnostic Platform
+# 🏥 MedTech Hip Dysplasia Backend
 
-Модульная платформа диагностики патологий по рентген-снимкам.  
-**Сегодня — дисплазия ТБС. Завтра — сколиоз. Послезавтра — всё остальное.**
+Professional FastAPI backend for medical image analysis using modular plugin architecture. Designed for hackathon with **extensibility** as core principle.
 
----
-
-## Архитектура
+## 🎯 Architecture: Modular Monolith
 
 ```
-app/
-├── main.py                        # Точка входа, lifespan, фабрика приложения
-├── core/
-│   ├── config.py                  # Конфигурация через pydantic-settings / .env
-│   └── model_registry.py          # Загрузка ML-моделей при старте (lifespan)
-├── api/
-│   └── router.py                  # Центральный роутер — регистрирует модули
-└── modules/
-    ├── base.py                    # BaseDiagnosticModule — абстрактный контракт
-    └── hip_dysplasia/
-        ├── router.py              # FastAPI-роутер эндпоинтов
-        ├── service.py             # Оркестратор ML-пайплайна
-        ├── schemas.py             # Pydantic-схемы запроса/ответа
-        ├── geometry.py            # GeometryEngine: линии, углы, дистанции
-        ├── classifier.py          # AgeBasedClassifier: сравнение с нормами
-        ├── dicom_utils.py         # Чтение DICOM, извлечение метаданных возраста
-        └── mask_utils.py          # RLE-кодирование масок сегментации
+┌─────────────────────────────────────────────────────────────────┐
+│                      Frontend (React + Vite)                    │
+│           http://localhost:5173 / http://localhost:3000        │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │ HTTP
+┌──────────────────────────┴──────────────────────────────────────┐
+│                    FastAPI Backend                              │
+│              http://localhost:8000                              │
+├──────────────────────────────────────────────────────────────────┤
+│  app/api/                          app/core/                     │
+│  ├─ diagnosis_router.py           ├─ config.py (CORS, paths)    │
+│  └─ patients_router.py            ├─ lifespan.py (ML loading)   │
+│                                     ├─ ml_loader.py (YOLO,      │
+│                                     │  MedSAM loader)           │
+│                                     └─ patient_store.py (in-mem) │
+│                                                                  │
+│  app/modules/                                                    │
+│  ├─ base.py (BaseDiagnosticModule - abstract class)             │
+│  ├─ hip_dysplasia/                                              │
+│  │  ├─ module.py (HipDysplasiaModule)                          │
+│  │  └─ calculations.py 🔴 YOUR CODE HERE                       │
+│  ├─ scoliosis/ (next module - same structure)                   │
+│  └─ ...                                                          │
+├──────────────────────────────────────────────────────────────────┤
+│  ML Models (Lazy-loaded on startup)                             │
+│  ├─ YOLO26n-seg (segmentation: femur, ilium, pubis_ischium)    │
+│  └─ MedSAM (optional: advanced segmentation)                    │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
-### Паттерн «Модульный монолит»
-
-Каждый диагностический модуль изолирован в своей директории и реализует
-контракт `BaseDiagnosticModule`. Для добавления нового модуля (например, сколиоза):
-
-1. Создать `app/modules/scoliosis/`
-2. Унаследовать сервис от `BaseDiagnosticModule`
-3. Добавить одну строку в `app/api/router.py`
-
----
-
-## ML-пайплайн (модуль ТБС)
+## 📁 Project Structure
 
 ```
-UploadFile (DICOM / PNG / JPG)
-        │
-        ▼
-  [dicom_utils]  ←─── извлечение возраста пациента из DICOM-тегов
-        │
-        ▼
-  [YOLO Detector] ──── локализация суставов → bbox
-        │
-        ▼
-  [MedSAM Segmentator] ── маски костей (ilium, femur) → RLE
-        │
-        ▼
-  [GeometryEngine] ─── линия Хильгенрейнера, Перкин, ацетабулярный индекс, h, d
-        │
-        ▼
-  [AgeBasedClassifier] ── сравнение с нормами → диагноз + степень тяжести
-        │
-        ▼
-  JSON Response (диагноз + ключевые точки + маски + уравнения линий)
+backend/
+├── app/
+│   ├── core/
+│   │   ├── __init__.py
+│   │   ├── config.py              ⚙️  Settings (CORS, paths, thresholds)
+│   │   ├── lifespan.py            🔄 Startup/shutdown hooks
+│   │   ├── ml_loader.py           🤖 Load YOLO + MedSAM
+│   │   └── patient_store.py       💾 In-memory patient storage
+│   │
+│   ├── api/
+│   │   ├── __init__.py
+│   │   ├── diagnosis_router.py    📤 POST /api/v1/hip-dysplasia/analyze
+│   │   └── patients_router.py     📋 Patient management endpoints
+│   │
+│   ├── modules/
+│   │   ├── __init__.py
+│   │   ├── base.py                🔴 BaseDiagnosticModule (abstract)
+│   │   └── hip_dysplasia/
+│   │       ├── __init__.py
+│   │       ├── module.py          🦵 Hip dysplasia logic
+│   │       └── calculations.py    🔴 YOUR geometric calculations
+│   │
+│   ├── main.py                    🚀 FastAPI app factory
+│   └── __init__.py
+│
+├── main.py                        🎯 Entry point (uvicorn)
+├── requirements.txt               📦 Dependencies
+├── .env                           🔐 Configuration
+├── .gitignore
+├── Dockerfile                     🐳 Container image
+├── docker-compose.yml             🐳 Orchestration
+├── QUICKSTART.md                  ⚡ Get started in 5 min
+├── ARCHITECTURE.md                🏗️  Detailed architecture
+└── README.md                      📖 This file
 ```
 
----
+## 🚀 Quick Start
 
-## Быстрый старт
-
-### Локально
+### 1. Install Dependencies
 
 ```bash
-# Клонировать и перейти в директорию
-cd medtech_platform
-
-# Установить зависимости
+cd backend
 pip install -r requirements.txt
-
-# Запустить (веса моделей опциональны — без них используются заглушки)
-uvicorn app.main:app --reload --port 8000
 ```
 
-### Docker
+### 2. Download ML Models
 
 ```bash
-docker-compose up --build
+mkdir -p weights
+# Download yolo26n-seg.pt from Ultralytics/Hugging Face
+# Place in: weights/yolo26n-seg.pt
 ```
 
-### Конфигурация (.env)
-
-```env
-YOLO_HIP_WEIGHTS=weights/yolo_hip.pt
-MEDSAM_WEIGHTS=weights/medsam.pth
-DEVICE=cpu          # или cuda:0
-YOLO_CONF_THRESHOLD=0.5
-```
-
----
-
-## API
-
-| Метод | Путь | Описание |
-|-------|------|----------|
-| GET | `/api/v1/health` | Проверка доступности |
-| GET | `/api/v1/modules` | Список активных модулей |
-| GET | `/api/v1/hip-dysplasia/info` | Метаданные модуля ТБС |
-| POST | `/api/v1/hip-dysplasia/analyze` | Анализ рентгенограммы |
-
-Интерактивная документация: `http://localhost:8000/docs`
-
-### Пример запроса
+### 3. Run Backend
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/hip-dysplasia/analyze \
-  -F "file=@xray.dcm"
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### Пример ответа
+✅ Backend ready: http://localhost:8000
 
-```json
+- Swagger Docs: http://localhost:8000/docs
+- Health Check: http://localhost:8000/api/v1/health
+
+### 4. Integrate Your Calculations
+
+Add your hip dysplasia analysis code to:
+
+```
+app/modules/hip_dysplasia/calculations.py
+```
+
+See template in that file.
+
+## 📡 API Reference
+
+### Analyze X-ray
+
+```bash
+POST /api/v1/hip-dysplasia/analyze
+Content-Type: multipart/form-data
+
+Request:
+  file: [Binary] DICOM or JPG/PNG image
+  patient_name: [Optional] Patient name
+
+Response: 200 OK
 {
+  "patient_id": "PT-2024-0001",
   "module": "hip_dysplasia",
   "status": "success",
   "result": {
-    "has_pathology": true,
-    "confidence": 0.891,
-    "side": "bilateral",
-    "severity": "moderate"
+    "diagnosis": "normal|dysplasia|dislocation",
+    "confidence": 0.95,
+    "side_affected": "none|left|right|bilateral"
   },
   "educational_data": {
-    "masks": {
-      "ilium": [1024, 512, 2048, 256],
-      "femur": [3072, 128],
-      "mask_shape": [512, 512]
-    },
     "keypoints": {
-      "hilgenreiner_points": [[128.0, 256.0], [384.0, 256.0]],
-      "perkin_points": [[320.0, 200.0], [320.0, 400.0]],
-      "acetabular_roof_points": [[128.0, 256.0], [320.0, 200.0]],
-      "femoral_head_center": [230.0, 310.0]
+      "left": [{"name": "femoral_head_center", "x": 100, "y": 200, "confidence": 0.95}],
+      "right": [...]
     },
-    "measurements": {
-      "acetabular_index": 31.5,
-      "normal_range": "≤25° (возраст: 6м)",
-      "distance_h": 14.2,
-      "distance_d": 90.0,
-      "lines": [
-        {"a": 0.0, "b": 1.0, "c": -256.0, "label": "hilgenreiner"},
-        {"a": 1.0, "b": 0.0, "c": -320.0, "label": "perkin"},
-        {"a": -0.28, "b": 0.96, "c": -210.0, "label": "acetabular_roof"}
-      ]
+    "masks": {
+      "femur": [{"polygon": [[x1,y1], [x2,y2], ...], "confidence": 0.93}],
+      "ilium": [...],
+      "pubis_ischium": [...]
     },
-    "patient_age_months": 6
+    "lines": {
+      "hilgenreiner_left": {
+        "p1": [x1, y1],
+        "p2": [x2, y2],
+        "equation": "y = 0.05x + 195"
+      }
+    },
+    "measurements_left": {
+      "acetabular_angle": 25.5,
+      "h_distance": 12.3,
+      "d_distance": 8.5
+    },
+    "measurements_right": {...}
+  },
+  "metadata": {
+    "patient_age": 45,
+    "patient_sex": "M",
+    "image_size": [512, 512]
   }
 }
 ```
 
----
-
-## Тесты
+### Patient Management
 
 ```bash
-pip install pytest pillow
-pytest tests/ -v
+GET  /api/v1/patients                       # All patients
+GET  /api/v1/patients/{patient_id}         # Patient info
+GET  /api/v1/patients/{patient_id}/results # All analyses
+GET  /api/v1/patients/{patient_id}/landmarks # Keypoints
 ```
+
+## 🔌 Extending: Add New Diagnosis Module
+
+### Example: Scoliosis Detection
+
+#### Step 1: Create Module
+
+```bash
+mkdir -p app/modules/scoliosis
+```
+
+#### Step 2: Implement Module
+
+```python
+# app/modules/scoliosis/module.py
+from app.modules.base import BaseDiagnosticModule
+
+class ScoliosisModule(BaseDiagnosticModule):
+    module_name = "scoliosis"
+
+    async def analyze(self, image_data, patient_age=None, patient_sex=None):
+        # Load image
+        image_array, metadata = self._load_image(image_data)
+
+        # Your analysis logic
+        result = {
+            "diagnosis": "normal|scoliosis",
+            "confidence": 0.92,
+            "cobb_angle": 35.5,
+        }
+
+        return {"result": result, "educational_data": {...}}
+
+    def validate_input(self, image_data):
+        # Check if image is suitable
+        return True
+```
+
+#### Step 3: Register in Main App
+
+```python
+# app/main.py
+from app.modules.scoliosis import ScoliosisModule
+
+scoliosis_router = APIRouter(prefix="/scoliosis", tags=["diagnosis"])
+
+@scoliosis_router.post("/analyze")
+async def analyze_scoliosis(file: UploadFile = File(...)):
+    analyzer = ScoliosisModule(app.state.models)
+    return await analyzer.analyze(await file.read())
+
+app.include_router(scoliosis_router, prefix=settings.API_PREFIX)
+```
+
+Done! New endpoint: `POST /api/v1/scoliosis/analyze` 🎉
+
+## 🧠 Where to Add Your Calculations Code
+
+Your geometric calculations should go in:
+
+```
+app/modules/hip_dysplasia/calculations.py
+```
+
+### Expected Function
+
+```python
+def compute_measurements(image_array, segmentation_results):
+    """
+    Returns: (measurements, keypoints)
+    """
+    # Calculate Hilgenreiner line
+    # Calculate acetabular angle
+    # Calculate distances h and d
+    # Extract keypoints: femoral head center, acetabular rim, etc.
+    # Determine left vs right hip
+    return measurements, keypoints
+```
+
+### Using in Module
+
+```python
+# In app/modules/hip_dysplasia/module.py
+from app.modules.hip_dysplasia.calculations import compute_measurements
+
+# In analyze() method:
+measurements, keypoints = compute_measurements(image_array, segmentation_results)
+```
+
+## 🐳 Docker Deployment
+
+### Build & Run
+
+```bash
+cd backend
+docker-compose up --build
+```
+
+Backend will be at: http://localhost:8000
+
+### With GPU Support
+
+Update `.env`:
+
+```
+DEVICE=cuda:0
+```
+
+## 🔧 Configuration
+
+### `.env` File
+
+```
+CORS_ORIGINS=["http://localhost:3000","http://localhost:5173"]
+YOLO_CONF_THRESHOLD=0.5
+YOLO_IOU_THRESHOLD=0.45
+DEVICE=cpu              # or cuda:0
+YOLO_MODEL_PATH=weights/yolo26n-seg.pt
+MEDSAM_MODEL_PATH=weights/medsam.pth
+```
+
+### Supported Image Formats
+
+- ✅ DICOM (.dcm, .dicom)
+- ✅ JPEG (.jpg, .jpeg)
+- ✅ PNG (.png)
+
+## 📊 Data Flow
+
+```
+1. User uploads X-ray (DICOM/JPG/PNG)
+                ↓
+2. DICOM → Extract age metadata (pydicom)
+   JPG/PNG → Load with PIL
+                ↓
+3. YOLO Segmentation
+   Output: Masks for [femur, ilium, pubis_ischium]
+                ↓
+4. compute_measurements() 🔴 YOUR CODE
+   Input: image, masks
+   Output: keypoints, angles, distances, lines
+                ↓
+5. Format response with educational data
+                ↓
+6. Store patient results in-memory
+                ↓
+7. Return JSON with diagnosis + detailed analysis
+```
+
+## 🧪 Testing
+
+### Manual Test with Swagger
+
+```
+http://localhost:8000/docs
+```
+
+Click on `/api/v1/hip-dysplasia/analyze` → Try it out → Upload file
+
+### Test with curl
+
+```bash
+curl -X POST \
+  -F "file=@path/to/image.jpg" \
+  http://localhost:8000/api/v1/hip-dysplasia/analyze
+```
+
+## 📈 Performance
+
+- **Model Loading:** ~2-3 seconds (done once at startup)
+- **Per-Request Analysis:** ~0.5-1.5 seconds (image load + YOLO inference)
+- **Memory:** ~2-3 GB (YOLO + CUDA)
+
+## ⚠️ Important Notes
+
+1. **ML Models are NOT included** - Download separately
+2. **Patient data is in-memory** - Restart app clears data (use DB for production)
+3. **Single GPU box** - Consider load balancing for production
+4. **CORS is open to localhost** - Restrict in production
+
+## 🚧 Production Checklist
+
+- [ ] Add database (PostgreSQL, MongoDB)
+- [ ] Implement authentication (JWT)
+- [ ] Add rate limiting
+- [ ] Enable HTTPS
+- [ ] Use secrets manager for API keys
+- [ ] Add request logging
+- [ ] Setup monitoring (Prometheus, Grafana)
+- [ ] Load test
+- [ ] Security audit
+
+## 📞 Support
+
+See also:
+
+- [QUICKSTART.md](QUICKSTART.md) - 5-minute setup
+- [ARCHITECTURE.md](ARCHITECTURE.md) - Detailed design
+- Frontend integration guide in [../INTEGRATION_GUIDE.md](../INTEGRATION_GUIDE.md)
 
 ---
 
-## Добавление нового модуля (пример: сколиоз)
-
-```python
-# app/modules/scoliosis/service.py
-from app.modules.base import BaseDiagnosticModule, DiagnosticResult
-
-class ScoliosisDiagnosticModule(BaseDiagnosticModule):
-    @property
-    def module_name(self) -> str:
-        return "scoliosis"
-
-    @property
-    def supported_formats(self) -> list[str]:
-        return ["image/png", "image/jpeg", "application/dicom"]
-
-    async def analyze(self, file, **kwargs) -> DiagnosticResult:
-        # ... реализация пайплайна
-        pass
-```
-
-```python
-# app/api/router.py — добавить одну строку:
-from app.modules.scoliosis.router import router as scoliosis_router
-api_router.include_router(scoliosis_router)
-```
+**Built with ❤️ for medical AI diagnostics**

@@ -29,7 +29,7 @@ export function UploadPage() {
         loadPatients();
     }, []);
 
-    const handleAnalysisComplete = (result) => {
+    const handleAnalysisComplete = ({ result, file }) => {
         // Добавляем нового пациента в список
         const newPatient = {
             id: result.patient_id,
@@ -40,8 +40,8 @@ export function UploadPage() {
 
         setPatients((prev) => [newPatient, ...prev]);
 
-        // Переходим на страницу просмотра студента
-        navigate(`/student?patientId=${result.patient_id}`);
+        // Переходим на страницу просмотра студента и передаём загруженный файл
+        navigate(`/student?patientId=${result.patient_id}`, { state: { files: [file] } });
     };
 
     return (

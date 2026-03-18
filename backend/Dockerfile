@@ -2,22 +2,27 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Системные зависимости для OpenCV и pydicom
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    libgomp1 \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
+# Copy requirements
 COPY requirements.txt .
+
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+# Copy application
+COPY app/ app/
+COPY main.py .
 
-# Папка для весов моделей (монтируется через volume)
+# Create weights directory
 RUN mkdir -p weights
 
+# Expose port
 EXPOSE 8000
 
+# Run application
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,86 +1,65 @@
 """
-Абстрактный базовый класс для всех диагностических модулей платформы.
-
-Паттерн «Плагин»: каждый новый диагноз (сколиоз, дисплазия, переломы)
-реализует этот интерфейс и получает автоматическую регистрацию в системе.
+Abstract base class for diagnostic modules.
+Defines the plugin interface for all diagnostic modules.
 """
-
 from abc import ABC, abstractmethod
-from typing import Any
-
-from fastapi import UploadFile
+from typing import Dict, Any
 from pydantic import BaseModel
 
 
-class DiagnosticResult(BaseModel):
-    """Универсальная обёртка ответа для любого диагностического модуля."""
+class DiagnosisResult(BaseModel):
+    """Standard diagnosis result schema."""
+    diagnosis: str  # "normal" | "dysplasia" | "subluxation" | "dislocation"
+    confidence: float
+    side_affected: str  # "none" | "left" | "right" | "bilateral"
 
-    module: str
-    """Уникальный идентификатор модуля, например 'hip_dysplasia'."""
 
-    status: str  # "success" | "error"
-
-    result: dict[str, Any]
-    """Итоговый клинический вывод: диагноз, уверенность."""
-
-    educational_data: dict[str, Any]
-    """
-    Детальные данные для фронтенда:
-    - masks: маски сегментации (RLE или полигоны)
-    - keypoints: координаты ключевых точек
-    - measurements: геометрические измерения и нормы
-    """
+class EducationalData(BaseModel):
+    """Educational output with detailed analysis data."""
+    keypoints: Dict[str, Any]  # Detected anatomical landmarks
+    masks: Dict[str, Any]  # Segmentation masks as polygons
+    lines: Dict[str, Any]  # Geometric lines and equations
+    measurements_left: Dict[str, Any] = {}
+    measurements_right: Dict[str, Any] = {}
 
 
 class BaseDiagnosticModule(ABC):
     """
-    Базовый класс для всех диагностических модулей.
-
-    Для добавления нового диагноза (например, «сколиоз»):
-    1. Создать папку app/modules/scoliosis/
-    2. Унаследовать класс ScoliosisDiagnosticModule от BaseDiagnosticModule
-    3. Реализовать методы module_name, supported_formats и analyze
-    4. Зарегистрировать роутер в app/api/router.py
+    Abstract base class for diagnostic modules.
+    Each module (hip_dysplasia, scoliosis, etc.) inherits from this.
     """
-
-    def __init__(self, models: dict[str, Any]) -> None:
+    
+    module_name: str = "base"
+    
+    def __init__(self, models: Dict[str, Any]):
         """
-        :param models: словарь загруженных ML-моделей из app.state.models.
-                       Каждый модуль берёт только нужные ему модели.
+        Initialize diagnostic module with loaded ML models.
+        
+        Args:
+            models: Dictionary of loaded ML models from app.state
         """
         self.models = models
-
-    @property
+    
     @abstractmethod
-    def module_name(self) -> str:
-        """Уникальное имя модуля. Используется в ответе и логировании."""
-        ...
-
-    @property
+    async def analyze(self, image_data: bytes, patient_age: int = None, 
+                     patient_sex: str = None) -> Dict[str, Any]:
+        """
+        Analyze medical image and return diagnosis.
+        
+        Args:
+            image_data: Binary image data (DICOM or JPG/PNG)
+            patient_age: Optional patient age from DICOM metadata
+            patient_sex: Optional patient sex
+            
+        Returns:
+            Dictionary with:
+            - result: DiagnosisResult
+            - educational_data: EducationalData
+            - metadata: Processing details
+        """
+        pass
+    
     @abstractmethod
-    def supported_formats(self) -> list[str]:
-        """
-        Список поддерживаемых MIME-типов.
-        Например: ['image/png', 'image/jpeg', 'application/dicom']
-        """
-        ...
-
-    @abstractmethod
-    async def analyze(self, file: UploadFile, **kwargs: Any) -> DiagnosticResult:
-        """
-        Основной метод анализа изображения.
-
-        :param file: загруженный файл (DICOM, PNG, JPG).
-        :param kwargs: дополнительные параметры (возраст пациента, сторона и т.д.).
-        :return: DiagnosticResult с полными образовательными данными.
-        """
-        ...
-
-    def _build_error_result(self, error_message: str) -> DiagnosticResult:
-        """Вспомогательный метод: формирует стандартный ответ об ошибке."""
-        return DiagnosticResult(
-            module=self.module_name,
-            status="error",
-            result={"has_pathology": None, "confidence": 0.0, "error": error_message},
-            educational_data={},
-        )
+    def validate_input(self, image_data: bytes) -> bool:
+        """Validate that image is suitable for this module."""
+        pass

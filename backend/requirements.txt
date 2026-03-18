@@ -1,20 +1,15 @@
-# --- Web Framework ---
-fastapi>=0.111.0
-uvicorn[standard]>=0.29.0
-python-multipart>=0.0.9    # для UploadFile / multipart form-data
-
-# --- Валидация и конфигурация ---
-pydantic>=2.7.0
-pydantic-settings>=2.2.0
-
-# --- Медицинские изображения ---
-pydicom>=2.4.4
-
-# --- ML инфраструктура ---
-numpy>=1.26.0
-opencv-python-headless>=4.9.0  # без GUI-зависимостей (для серверов)
-torch>=2.2.0                   # PyTorch для MedSAM
-ultralytics>=8.2.0             # YOLOv8
-
-# --- Опционально: ускорение на GPU ---
-# torch==2.2.0+cu121            # раскомментировать для CUDA 12.1
+fastapi
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+python-multipart==0.0.6
+pillow==10.1.0
+numpy==1.26.4
+opencv-python==4.10.1.26
+scipy==1.13.1
+ultralytics==8.0.226
+pydicom==2.4.4
+# PyTorch with pre-built wheels (no ninja compilation needed)
+torch==2.1.1+cpu --index-url https://download.pytorch.org/whl/cpu
+torchvision==0.16.1+cpu --index-url https://download.pytorch.org/whl/cpu
+python-dotenv==1.0.0

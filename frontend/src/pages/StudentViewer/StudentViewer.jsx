@@ -1,4 +1,4 @@
-import { useNavigate, useSearchParams } from 'react-router';
+import { useLocation, useNavigate, useSearchParams } from 'react-router';
 import { useEffect, useMemo, useState } from 'react';
 import { House } from 'lucide-react';
 import { Button } from '../../components/ui/Button/Button';
@@ -43,11 +43,15 @@ const fallbackLandmarks = [
 
 export function StudentViewer() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [searchParams] = useSearchParams();
     const patientIdFromUrl = searchParams.get('patientId');
 
     const [activeTool, setActiveTool] = useState('Pan');
-    const [files, setFiles] = useState([]);
+    const [files, setFiles] = useState(() => {
+        const initialFiles = location.state?.files;
+        return Array.isArray(initialFiles) ? initialFiles : [];
+    });
     const [search, setSearch] = useState('');
     const [patients, setPatients] = useState([]);
     const [activePatientId, setActivePatientId] = useState(patientIdFromUrl);
@@ -56,6 +60,13 @@ export function StudentViewer() {
     const [confidence, setConfidence] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    // Если url содержит patientId, синхронизируем состояние
+    useEffect(() => {
+        if (patientIdFromUrl && patientIdFromUrl !== activePatientId) {
+            setActivePatientId(patientIdFromUrl);
+        }
+    }, [patientIdFromUrl, activePatientId]);
 
     const apiFetch = async (path, options = {}) => {
         const url = `${path}`;
@@ -209,7 +220,7 @@ export function StudentViewer() {
                         <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => navigate('/doctor')}
+                            onClick={() => navigate('/doctor', { state: { files } })}
                             className="student-viewer__mode-btn"
                         >
                             Я ВРАЧ
@@ -276,7 +287,9 @@ export function StudentViewer() {
                     <div className="student-viewer__toolbar-container">
                         {/* Группа загрузки файлов */}
                         <div className="student-viewer__upload-group">
-                            <FileUploader onFiles={handleFilesUploaded} />
+                            {files.length === 0 && (
+                                <FileUploader onFiles={handleFilesUploaded} />
+                            )}
                             {files.length > 0 && (
                                 <span className="student-viewer__file-count">
                                     {files.length} файл(ов) загружено

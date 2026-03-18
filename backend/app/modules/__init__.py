@@ -1,1 +1,1 @@
-# app/modules
+"""Diagnostic modules."""

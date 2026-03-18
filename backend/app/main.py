@@ -1,45 +1,34 @@
 """
-MedTech платформа диагностики патологий по рентген-снимкам.
-Точка входа приложения — регистрация модулей и lifespan-хук для ML-моделей.
+Main FastAPI application entry point.
 """
-
-from contextlib import asynccontextmanager
-from typing import AsyncIterator
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+import logging
 
 from app.core.config import settings
-from app.core.model_registry import ModelRegistry
-from app.api.router import api_router
+from app.core.lifespan import lifespan
+from app.api.diagnosis_router import create_hip_dysplasia_router
+from app.api.patients_router import router as patients_router
 
-
-@asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """
-    Lifespan-хук: загружает все ML-модели один раз при старте приложения
-    и освобождает ресурсы при остановке.
-    Модели хранятся в app.state, чтобы избежать повторной загрузки на каждый запрос.
-    """
-    registry = ModelRegistry()
-    app.state.models = await registry.load_all()
-    print(f"[lifespan] Загружено моделей: {list(app.state.models.keys())}")
-    yield
-    # Освобождаем GPU/CPU ресурсы при остановке
-    await registry.unload_all(app.state.models)
-    print("[lifespan] Все модели выгружены")
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 
 def create_app() -> FastAPI:
-    """Фабрика приложения — удобно для тестирования."""
+    """Create and configure FastAPI application."""
+    
     app = FastAPI(
-        title=settings.APP_TITLE,
-        version=settings.APP_VERSION,
-        description="Модульная платформа МедТех-диагностики. Сегодня — ТБС, завтра — сколиоз.",
+        title=settings.API_TITLE,
+        version=settings.API_VERSION,
         lifespan=lifespan,
     )
-
-    # CORS — для взаимодействия с фронтендом
+    
+    # CORS middleware
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.CORS_ORIGINS,
@@ -47,11 +36,32 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-
-    # Подключаем центральный роутер (он сам подтягивает модули)
-    app.include_router(api_router, prefix=settings.API_V1_PREFIX)
-
+    
+    # Health check endpoint
+    @app.get(f"{settings.API_PREFIX}/health")
+    async def health_check():
+        """Health check endpoint."""
+        models = getattr(app.state, 'models', {})
+        return {
+            "status": "ok",
+            "version": settings.API_VERSION,
+            "models_loaded": {
+                "yolo": models.get('yolo') is not None,
+                "medsam": models.get('medsam') is not None,
+            }
+        }
+    
+    # Register diagnosis routers
+    hip_router = create_hip_dysplasia_router(app)
+    app.include_router(hip_router, prefix=settings.API_PREFIX)
+    
+    # Register patient management routers
+    app.include_router(patients_router, prefix=settings.API_PREFIX)
+    
+    logger.info("✅ FastAPI application configured")
+    
     return app
 
 
+# Create app instance
 app = create_app()

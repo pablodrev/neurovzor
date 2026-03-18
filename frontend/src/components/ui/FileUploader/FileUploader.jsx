@@ -25,9 +25,9 @@ export default function FileUploader({ onAnalysisComplete, onError }) {
             setSuccess(`Анализ завершен! Patient ID: ${result.patient_id}`);
             console.log('Analysis result:', result);
 
-            // Передаем результат родительскому компоненту
+            // Передаем результат родительскому компоненту (включая файл)
             if (onAnalysisComplete) {
-                onAnalysisComplete(result);
+                onAnalysisComplete({ result, file });
             }
 
             // Очищаем input

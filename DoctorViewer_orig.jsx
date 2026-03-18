@@ -1,4 +1,4 @@
-import { useLocation, useNavigate, useSearchParams } from 'react-router';
+import { useNavigate } from 'react-router';
 import { House } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '../../components/ui/Button/Button';
@@ -11,8 +11,9 @@ import { ScrollArea } from '../../components/ui/ScrollArea/ScrollArea';
 import Toolbar from '../../components/ui/Toolbar/Toolbar';
 import CornerstoneViewer from '../../components/ui/CornerstoneViewer/CornerstoneViewer';
 import FileUploader from '../../components/ui/FileUploader/FileUploader';
-import api from '../../services/api.js';
 import './DoctorViewer.scss';
+
+const API_BASE = import.meta.env.VITE_API_BASE ?? '';
 
 const fallbackPatients = [
     {
@@ -62,19 +63,12 @@ const fallbackResults = [
 
 export function DoctorViewer() {
     const navigate = useNavigate();
-    const location = useLocation();
-    const [searchParams] = useSearchParams();
-    const patientIdFromUrl = searchParams.get('patientId');
-
     const [activeTool, setActiveTool] = useState('Pan');
-    const [files, setFiles] = useState(() => {
-        const initialFiles = location.state?.files;
-        return Array.isArray(initialFiles) ? initialFiles : [];
-    });
+    const [files, setFiles] = useState([]);
 
     const [search, setSearch] = useState('');
     const [patients, setPatients] = useState([]);
-    const [activePatientId, setActivePatientId] = useState(patientIdFromUrl);
+    const [activePatientId, setActivePatientId] = useState(null);
     const [landmarks, setLandmarks] = useState([]);
     const [results, setResults] = useState([]);
     const [confidence, setConfidence] = useState(null);
@@ -82,7 +76,7 @@ export function DoctorViewer() {
     const [error, setError] = useState(null);
 
     const apiFetch = async (path, options = {}) => {
-        const url = `${path}`;
+        const url = `${API_BASE}${path}`;
         const res = await fetch(url, {
             headers: { 'Content-Type': 'application/json' },
             ...options,
@@ -103,27 +97,21 @@ export function DoctorViewer() {
             setError(null);
 
             try {
-                const patientsData = await api.getPatients();
+                const patientsData = await apiFetch('/api/patients');
                 setPatients(patientsData);
-                if (patientIdFromUrl) {
-                    setActivePatientId(patientIdFromUrl);
-                } else if (!activePatientId && patientsData.length > 0) {
-                    setActivePatientId(patientsData[0]?.id ?? null);
-                }
+                setActivePatientId(patientsData[0]?.id ?? null);
             } catch (err) {
                 console.error('Failed to load patients', err);
                 setError('Не удалось загрузить список пациентов');
                 setPatients(fallbackPatients);
-                if (!activePatientId) {
-                    setActivePatientId(fallbackPatients[0]?.id ?? null);
-                }
+                setActivePatientId(fallbackPatients[0]?.id ?? null);
             } finally {
                 setLoading(false);
             }
         };
 
         load();
-    }, [activePatientId, patientIdFromUrl]);
+    }, []);
 
     useEffect(() => {
         if (!activePatientId) return;
@@ -131,9 +119,9 @@ export function DoctorViewer() {
         const loadPatientData = async () => {
             try {
                 const [landmarksData, resultsData, confidenceData] = await Promise.all([
-                    api.getLandmarks(activePatientId),
-                    api.getResults(activePatientId),
-                    api.getConfidence(activePatientId),
+                    apiFetch(`/api/patients/${activePatientId}/landmarks`),
+                    apiFetch(`/api/patients/${activePatientId}/results`),
+                    apiFetch(`/api/patients/${activePatientId}/confidence`),
                 ]);
 
                 setLandmarks(normalizeLandmarks(landmarksData));
@@ -246,7 +234,7 @@ export function DoctorViewer() {
                         <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => navigate('/student', { state: { files } })}
+                            onClick={() => navigate('/student')}
                             className="doctor-viewer__mode-btn"
                         >
                             Я СТУДЕНТ

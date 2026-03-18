@@ -1,1 +1,1 @@
-# app
+"""Backend application package."""
