@@ -1,0 +1,37 @@
+@use '../../../assets/styles/variables.scss' as *;
+@use '../../../assets/styles/mixins.scss' as *;
+
+.file-uploader {
+    position: relative;
+    display: inline-flex;
+
+    &__input {
+        display: none;
+    }
+
+    &__btn {
+        display: flex;
+        align-items: center;
+        gap: var(--space-xs);
+        padding: var(--space-xs) var(--space-md);
+        background-color: $primary;
+        color: $white;
+        border: none;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: var(--text-xs);
+        font-weight: var(--font-weight-medium);
+        white-space: nowrap;
+        box-shadow: var(--shadow-glow-blue);
+
+        &:hover {
+            background-color: lighten($primary, 8%);
+            box-shadow: var(--shadow-glow-blue), 0 0 16px rgba($primary, 0.4);
+        }
+
+        &:active {
+            transform: scale(0.98);
+        }
+    }
+}

@@ -1,0 +1,258 @@
+// _mixins.scss
+@layer utilities {
+    // ================================
+    // Flexbox
+    // ================================
+
+    .flex-center {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .flex-col {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .flex-row {
+        display: flex;
+        flex-direction: row;
+    }
+
+    .items-center {
+        align-items: center;
+    }
+
+    .justify-center {
+        justify-content: center;
+    }
+
+    .justify-between {
+        justify-content: space-between;
+    }
+
+    .gap-xs {
+        gap: var(--space-xs);
+    }
+
+    .gap-sm {
+        gap: var(--space-sm);
+    }
+
+    .gap-md {
+        gap: var(--space-md);
+    }
+
+    .gap-lg {
+        gap: var(--space-lg);
+    }
+
+    .gap-xl {
+        gap: var(--space-xl);
+    }
+
+    // ================================
+    // Scrollbar
+    // ================================
+
+    .scrollbar-thin {
+        &::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: var(--color-muted);
+            border-radius: 10px;
+
+            &:hover {
+                background: var(--color-muted-foreground);
+            }
+        }
+    }
+
+    .scrollbar-hidden {
+        &::-webkit-scrollbar {
+            display: none;
+        }
+
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    // ================================
+    // Positioning
+    // ================================
+
+    .absolute-center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .cover {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    // ================================
+    // Text utilities
+    // ================================
+
+    .truncate {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .line-clamp-1 {
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+    }
+
+    .line-clamp-2 {
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    .line-clamp-3 {
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+    }
+
+    // ================================
+    // Borders & Radius
+    // ================================
+
+    .rounded-sm {
+        border-radius: var(--radius-sm);
+    }
+
+    .rounded-md {
+        border-radius: var(--radius-md);
+    }
+
+    .rounded-lg {
+        border-radius: var(--radius-lg);
+    }
+
+    .rounded-xl {
+        border-radius: var(--radius-xl);
+    }
+
+    .rounded-full {
+        border-radius: 9999px;
+    }
+
+    // ================================
+    // Shadows
+    // ================================
+
+    .shadow-sm {
+        box-shadow: var(--shadow-sm);
+    }
+
+    .shadow-md {
+        box-shadow: var(--shadow-md);
+    }
+
+    .shadow-lg {
+        box-shadow: var(--shadow-lg);
+    }
+
+    // ================================
+    // Transitions
+    // ================================
+
+    .transition {
+        transition: all 0.2s ease;
+    }
+
+    .transition-colors {
+        transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    }
+
+    .transition-transform {
+        transition: transform 0.2s ease;
+    }
+}
+
+// ================================
+// SCSS МИКСИНЫ (для @include)
+// ================================
+
+// Миксин для скроллбара
+@mixin scrollbar {
+    &::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: var(--color-muted);
+        border-radius: 10px;
+
+        &:hover {
+            background: var(--color-muted-foreground);
+        }
+    }
+}
+
+// Миксин для обрезки текста
+@mixin truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+// Миксин для медиа-запросов
+@mixin respond($breakpoint) {
+    $breakpoints: (
+        'sm': 480px,
+        'md': 768px,
+        'lg': 1024px,
+        'xl': 1440px,
+        '2xl': 1920px
+    );
+
+@if map-has-key($breakpoints, $breakpoint) {
+    @media (min-width: map-get($breakpoints, $breakpoint)) {
+        @content;
+    }
+}
+}
+
+// Миксин для hover
+@mixin hover {
+    @media (hover: hover) {
+        &:hover {
+            @content;
+        }
+    }
+}
+
+// Миксин для glass-эффекта
+@mixin glass($opacity: 0.1, $blur: 10px) {
+    background: rgba(var(--color-background), $opacity);
+    backdrop-filter: blur($blur);
+    -webkit-backdrop-filter: blur($blur);
+}
